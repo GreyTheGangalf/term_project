@@ -1,0 +1,12 @@
+# Data files
+*.csv
+*.xlsx
+*.json
+
+# Environment and cache files
+__pycache__/
+*.pyc
+.env
+venv/
+env/
+.DS_Store
