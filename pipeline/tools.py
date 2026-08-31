@@ -78,6 +78,43 @@ def get_fundamental_data(ticker: str, target_date: str) -> str:
     return json.dumps({"error": f"{ticker} hissesi için {target_date} tarihinden öncesine ait veri bulunamadı."})
     pass
 
+@tool
+def get_price_history(ticker: str, target_date: str, days: int = 30) -> str:
+    """
+    Retrieves the price and volume (OHLCV) data for the specified asset (ticker) for the last X days prior to the target date.
+    Parameters:
+        - ticker: The asset to be analyzed (e.g., THYAO.IS, BTCUSDT)
+        - target_date: Target date (e.g., 2026-05-15)
+        - days: The number of days of historical data to retrieve (Default: 30)
+    """
+    if ticker.endswith("USDT"):
+        table_name = "crypto_ohlcv"
+    elif ticker in ["GC=F", "CL=F"]: 
+        table_name = "commodities_price_history"
+    else:
+        table_name = "share_prices_df"
+
+    query = f"""
+        SELECT "Date", "Close", "Volume" 
+        FROM {table_name}
+        WHERE "Ticker" = %(ticker)s AND "Date" <= %(target_date)s 
+        ORDER BY "Date" DESC 
+        LIMIT %(days)s;
+    """
+    try:
+        df = pd.read_sql(query, engine, params={"ticker": ticker, "target_date": target_date, "days": days})
+        
+        if df.empty:
+            return json.dumps({"error": f"No price data was found for {ticker} prior to {target_date}."})
+        
+        df = df.sort_values(by="Date", ascending=True)
+        df["Date"] = df["Date"].astype(str)
+        
+        return df.to_json(orient="records", force_ascii=False)
+        
+    except Exception as e:
+        return json.dumps({"error": f"Database error ({ticker}): {str(e)}"})
+
 if __name__ == "__main__":
     print(get_local_macro_data("2025-03-15"))
     print("---------------------------------")

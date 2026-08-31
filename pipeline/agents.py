@@ -3,6 +3,7 @@ from langchain_core.prompts import ChatPromptTemplate
 from pipeline.state import AgentState
 from pipeline.tools import get_local_macro_data
 from pipeline.tools import get_fundamental_data
+from pipeline.tools import get_price_history
 
 llm = ChatOllama(
     model="mistral:7b", 
@@ -32,6 +33,8 @@ def macro_agent_node(state: AgentState) -> dict:
     
     return {"macro_context": response.content}
 
+
+
 fundamental_llm_with_tools = llm.bind_tools([get_fundamental_data])
 
 def fundamental_agent_node(state: AgentState) -> dict:
@@ -56,6 +59,29 @@ def fundamental_agent_node(state: AgentState) -> dict:
     })
     
     return {"fundamental_context": response.content}
+
+
+technical_llm_with_tools = llm.bind_tools([get_price_history])
+
+def technical_agent_node(state: AgentState) -> dict:
+    """
+    Technical Analysis Agent: Analyzes price and volume movements over the past 30 days and performs short-term trend analysis.
+    """
+    print(f"--- TECHNICAL ANALYSIS TOOL IS RUNNING ({state.ticker}) ---")
+    
+    prompt = ChatPromptTemplate.from_messages([
+        ("system", """You are a quantitative technical analyst (Swing Trader).
+        Your task is to use a tool to retrieve the historical price movements of the asset provided to you, starting from a specified date.
+        Analyze the trend direction (upward/downward) in the price series, potential momentum breakouts, and changes in volume.
+        Your output should be clear and objective, providing the portfolio manager with insights regarding “short-term timing.”"""),
+        ("user", "Asset to be analyzed: {ticker}. Target Date: {current_date}. Please retrieve the price data for the last 30 days and summarize the technical outlook.")
+    ])
+    
+    chain = prompt | technical_llm_with_tools
+    response = chain.invoke({"current_date": state.current_date, "ticker": state.ticker})
+    
+    return {"technical_context": response.content}
+
 
 def portfolio_manager_node(state: AgentState) -> dict:
     """
@@ -83,6 +109,9 @@ def portfolio_manager_node(state: AgentState) -> dict:
         Fundamental Analysis Report:
         {fundamental_context}
 
+        Technical Analysis Report (Timing and Momentum):
+        {technical_context}
+
         Please make your final investment decision:
         """)
     ])
@@ -95,7 +124,8 @@ def portfolio_manager_node(state: AgentState) -> dict:
         "portfolio_cash": state.portfolio_cash,
         "portfolio_holdings": state.portfolio_holdings,
         "macro_context": state.macro_context,
-        "fundamental_context": state.fundamental_context
+        "fundamental_context": state.fundamental_context,
+        "technical_context": state.technical_context
     })
-    
+
     return {"final_decision": response.content}
