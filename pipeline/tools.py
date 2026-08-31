@@ -2,11 +2,20 @@ import pandas as pd
 import json
 import os
 import sys
+from langchain_core.tools import tool
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from db_config import engine
 
+@tool
 def get_local_macro_data(target_date: str) -> str:
+
+    """
+    Retrieves the most recent available macroeconomic data for Turkey as of the date specified by the agent.
+    Parameter: target_date (e.g., ‘2026-05-15’)
+    Return: Text in JSON format.
+    """
+
     query = """
         SELECT * 
         FROM local_macro
@@ -30,9 +39,18 @@ def get_local_macro_data(target_date: str) -> str:
         
     except Exception as e:
         return json.dumps({"error": f"Database error: {str(e)}"})
+    pass
 
-
+@tool
 def get_fundamental_data(ticker: str, target_date: str) -> str:
+    """
+    Retrieves the most recent balance sheet/fundamental analysis data for the specified stock (ticker) as of the given date.
+    Parameters:
+        - ticker (e.g., ‘THYAO.IS’ or ‘AAPL’)
+        - target_date (e.g., ‘2026-05-15’)
+    Return: Fundamental analysis data in JSON format.
+    """
+
     table_names = ["bist_table", "sp500_table"] 
     
     for table_name in table_names:
@@ -58,6 +76,7 @@ def get_fundamental_data(ticker: str, target_date: str) -> str:
             continue
             
     return json.dumps({"error": f"{ticker} hissesi için {target_date} tarihinden öncesine ait veri bulunamadı."})
+    pass
 
 if __name__ == "__main__":
     print(get_local_macro_data("2025-03-15"))

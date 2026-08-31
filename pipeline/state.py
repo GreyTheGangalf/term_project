@@ -1,0 +1,14 @@
+from pydantic import BaseModel, Field
+from typing import Dict, Optional
+
+class AgentState(BaseModel):
+    current_date: str = Field(description="The current analysis date for backtesting (e.g., 2024-12-31)")
+    ticker: str = Field(description="The security symbol being analyzed (e.g., THYAO.IS)")
+    
+    macro_context: Optional[str] = Field(default=None, description="The market regime report produced by the macro agency based on its analysis of inflation and interest rates")
+    fundamental_context: Optional[str] = Field(default=None, description="A fundamental analysis report on whether a stock is undervalued or overvalued, prepared by an analyst based on its financial statements")
+    
+    portfolio_cash: float = Field(default=10000.0, description="Current cash balance (USD or TRY)")
+    portfolio_holdings: Dict[str, float] = Field(default_factory=dict, description="Assets held and their quantities")
+    
+    final_decision: Optional[str] = Field(default=None, description="The agent's final action and rationale (BUY/SELL/HOLD)")
