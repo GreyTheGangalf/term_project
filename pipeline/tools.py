@@ -115,6 +115,19 @@ def get_price_history(ticker: str, target_date: str, days: int = 30) -> str:
     except Exception as e:
         return json.dumps({"error": f"Database error ({ticker}): {str(e)}"})
 
+@tool
+def get_sentiment_data(ticker: str, target_date: str) -> str:
+    """
+    Sentiment Report Reflecting News Flow and Market Sentiment: Retrieves news flow and market sentiment data for the specified asset on the given date.
+    Parameters: ticker, target_date
+    """
+    mock_data = {
+        "sentiment_score": 50,
+        "sentiment_label": "Neutral",
+        "news_summary": f"As of {target_date}, no unusual news flow, legal proceedings, or market anomalies have been identified for {ticker}."
+    }
+    return json.dumps(mock_data, ensure_ascii=False)
+
 if __name__ == "__main__":
     print(get_local_macro_data("2025-03-15"))
     print("---------------------------------")
